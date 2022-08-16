@@ -29,6 +29,12 @@ private:
 
 	void drawScore();
 
+	void checkOver();
+	
+	void saveScore();
+
+	void displayOver();
+
 private:
 	int m_delay;
 	
@@ -55,5 +61,17 @@ private:
 	Block backBlock;//当前方块下落过程中，用来备份上一个合法位置
 
 	int score;//current score
+
+	int level;//当前关卡
+
+	int lineCount;//当前消除了多少行
+
+	int highestScore;
+
+	bool gameOver;//游戏结束状态
+
+	IMAGE imgOver;//图片变量（失败）
+
+	IMAGE imgWin;//图片变量（顺利通关）
 };
 

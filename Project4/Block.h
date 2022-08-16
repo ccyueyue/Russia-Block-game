@@ -30,7 +30,9 @@ public:
 
 private:
 	int blockType;//∑ΩøÈ¿‡–Õ
+
 	Point smallBlocks[4];
+
 	IMAGE* img;
 
 	static IMAGE* imgs[7];

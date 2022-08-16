@@ -6,9 +6,14 @@
 #include<conio.h>
 #include<mmsystem.h>
 #pragma comment(lib,"winmm.lib")
+#include<fstream>
+#define MAX_LEVEL 5
+#define RECORD_FILE "recorder.txt"
+#include<iostream>
 
-const int SPEED_NORMAL = 500; //ms
-const int SPEED_QUICK = 50;//ms
+//const int SPEED_NORMAL = 500; //ms
+const int SPEED_NORMAL[MAX_LEVEL] = {500, 300, 150, 100, 80};
+const int SPEED_QUICK = 30;//ms
 Tetris::Tetris(int row, int cols, int left, int top, int blockSize){
 	this->rows = row;
 	this->cols = cols;
@@ -26,7 +31,9 @@ Tetris::Tetris(int row, int cols, int left, int top, int blockSize){
 
 void Tetris::init()
 {
-	m_delay = SPEED_NORMAL;
+	mciSendString("play res/bg.mp3 repeat", 0, 0, 0);
+
+	m_delay = SPEED_NORMAL[0];
 
 	//m_delay = false;
 
@@ -37,6 +44,9 @@ void Tetris::init()
 
 	loadimage(&imgBg,"res/bg2.png");//加载背景图片
 
+	loadimage(&imgWin, "res/win.png");
+	loadimage(&imgOver, "res/over.png");
+
 	//初始化游戏区的数据
 	char data[20][10];
 	for (int i = 0; i < rows; i++) {
@@ -45,6 +55,20 @@ void Tetris::init()
 		}
 	}
 	score = 0;
+	lineCount = 0;
+	level = 1;
+
+	//初始化最高分
+	std::ifstream  file(RECORD_FILE,std::ios::in);
+	if (!file.is_open()) {
+		std::cout << RECORD_FILE << "打开失败\n";
+		highestScore = 0;
+	}
+	else {
+		file >> highestScore;
+	}
+	file.close();
+	gameOver = false;
 }
 
 void Tetris::play()
@@ -75,7 +99,15 @@ void Tetris::play()
 			//更新游戏的数据 
 			clearLine();
 		}
-		
+		if (gameOver) {
+			//保存分数
+			saveScore();
+			//更新游戏结束界面
+			displayOver();
+
+			system("pause");
+			init();//重新开始新的一局
+		}
 
 
 	}
@@ -143,7 +175,7 @@ void Tetris::updateWindow()
 	nextBlock->draw(689, 150);
 
 	drawScore();//绘制分数
-
+	
 	EndBatchDraw();
 }
 
@@ -174,8 +206,11 @@ void Tetris::down()
 		delete curBlock;
 		curBlock = nextBlock;
 		nextBlock = new Block;
+
+		//检查游戏是否结束
+		checkOver();
 	}
-	m_delay = SPEED_NORMAL;
+	m_delay = SPEED_NORMAL[level-1];
 	
 }
 
@@ -207,6 +242,13 @@ void Tetris::clearLine()
 		mciSendString("play res/xiaochu1.mp3", 0, 0, 0);
 		m_update = true;
 	}
+	//每一百分一个级别
+	level = (score + 99) / 100;
+	if (level > MAX_LEVEL) {
+		gameOver = true;
+	}
+
+	lineCount += lines;
 }
 
 void Tetris::moveLeftRight(int offset)
@@ -247,4 +289,46 @@ void Tetris::drawScore()
 	settextstyle(&f);
 	setbkmode(TRANSPARENT);//设置字体背景为透明效果
 	outtextxy(670, 727, scoreText);
+	//绘制消除了多少行
+	sprintf_s(scoreText, sizeof(scoreText), "%d", lineCount);
+	gettextstyle(&f);
+	int xPos = 224 - f.lfWidth * strlen(scoreText);
+	outtextxy(xPos, 817, scoreText);
+	//绘制当前是第几关
+	sprintf_s(scoreText, sizeof(scoreText), "%d", level);
+	outtextxy(224-30, 727, scoreText);
+	//绘制当前最高分
+	sprintf_s(scoreText, sizeof(scoreText), "%d", highestScore);
+	outtextxy(670, 817, scoreText);
+
+}
+
+void Tetris::checkOver()
+{
+	gameOver = (curBlock->blockInMap(map) == false);
+}
+
+void Tetris::saveScore()
+{
+	if (score > highestScore) {
+		highestScore = score;
+
+		std::ofstream file(RECORD_FILE, std::ios::out);
+		file << highestScore;
+		file.close();
+	}
+}
+
+void Tetris::displayOver()
+{
+	mciSendString("stop res/bg.mp3", 0, 0, 0);
+	//判断是否顺利通关
+	if (level <= MAX_LEVEL) {
+		putimage(262, 361, &imgOver);
+		mciSendString("play res/over.mp3", 0, 0, 0);
+	}
+	else {
+		putimage(262, 361, &imgWin);
+		mciSendString("play res/win.mp3", 0, 0, 0);
+	}
 }

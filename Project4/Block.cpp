@@ -2,7 +2,9 @@
 #include<cstdlib>
 
 IMAGE* Block::imgs[7] = {NULL,};
+
 int Block::size = 36;
+
 Block::Block()
 {
 	if (imgs[0] == NULL) {
