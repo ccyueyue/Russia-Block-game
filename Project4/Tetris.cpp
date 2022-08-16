@@ -108,8 +108,6 @@ void Tetris::play()
 			system("pause");
 			init();//重新开始新的一局
 		}
-
-
 	}
 }
 
@@ -243,7 +241,7 @@ void Tetris::clearLine()
 		m_update = true;
 	}
 	//每一百分一个级别
-	level = (score + 99) / 100;
+	level = (score + 100) / 100;
 	if (level > MAX_LEVEL) {
 		gameOver = true;
 	}
